@@ -198,13 +198,18 @@ textarea:focus {
 
 .in {
 	border-bottom-left-radius: 0px;
-	background-color: rgba(75, 116, 185, .3);
+	background-color: rgba(183, 190, 204, 0.3); //rgba(75, 116, 185, .3);
 }
 
 .out {
 	border-bottom-right-radius: 0px;
 	text-align: left;
-	background-color: rgba(248, 205, 83, .3);
+	background-color: rgba(216, 195, 137, 0.3); //rgba(248, 205, 83, .3);
+}
+
+.main-msg {
+	font-size: 13px;
+    font-weight: 600;
 }
 
 .day {

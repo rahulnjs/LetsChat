@@ -1,6 +1,7 @@
 package com.chat.component;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ public class Worker {
 	
 	public static final String CHAT_USER = "chat_user";
 	public static final String CHAT = "chat";
+	public static final String CHAT_MSG = "chat_msg";
 	
 	public List<Message> getAllMessages(int chatRoomID) {
 		return DataStorage.getChatRoom(chatRoomID).getMsgs();
@@ -146,6 +148,52 @@ public class Worker {
 		qry.put("slug", slug);
 		return MongoDB._cln(CHAT).find(qry).first().toJson();
 	}
+	
+	
+	public String gms(String slug, String time, String user, boolean typing, long lmt) {
+		BasicDBObject qry = new BasicDBObject();
+		qry.put("slug", slug);
+		updateStatus(slug, time, user, typing);
+		Document doc = MongoDB._cln(CHAT).find(qry).first();
+		return "{\"msg\": " + getmsggt(lmt, slug) + ","
+				+ " \"status\": " + toJSON(doc.get("users")) + "}";
+	}
+	/////////
+	public String getmsggt(long l, String slug) {
+		BasicDBObject qry = new BasicDBObject();
+		qry.put("cr", slug);
+		qry.append("time", new BasicDBObject("$gt", l));
+		return toJSON(MongoDB._cln(CHAT_MSG).find(qry).iterator());
+	}
+	
+	
+	private boolean updateStatus(String slug, String time, String user, boolean typing) {
+		String status = typing ? "Typing..." : time;
+		BasicDBObject qry = new BasicDBObject();
+		qry.put("users.user", user);
+		qry.put("slug", slug);
+		BasicDBObject qry2 = new BasicDBObject();
+		qry2.put("users.$.status", status);
+		long i = MongoDB._cln(CHAT).updateOne(qry, new Document("$set", qry2)).getModifiedCount();
+		return i > 0;
+	}
+	
+	public boolean postMsg(String slug, String json) {
+		try {
+			Document doc = Document.parse(json);
+			doc.put("cr", slug);
+			MongoDB._cln(CHAT_MSG).insertOne(doc);
+			return true;
+		} catch (Exception e) {
+			System.out.println(e);
+			return false;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private String toJSON(Object o) {
+		return toJSON(((ArrayList<Document>) o).iterator());
+	}
 
 	private String toJSON(Iterator<Document> itr) {
 		String json = "[";
@@ -157,6 +205,8 @@ public class Worker {
 		}
 		return json + "]";
 	}
+	
+	
 	
 }
 

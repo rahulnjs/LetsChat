@@ -88,6 +88,22 @@ public class ApplicationController {
 		}
 	}
 	
+	@ResponseBody
+	@RequestMapping("/chat/{chatRoom}/gms")
+	public String getMsgsAndStatus(@PathVariable String chatRoom, 
+			@RequestParam boolean status, @RequestParam String time,
+			@RequestParam String user, @RequestParam long lmt) {
+		return worker.gms(chatRoom, time, user, status, lmt);
+	}
+	
+	@ResponseBody
+	@RequestMapping("/chat/{chatRoom}/post-msg")
+	public String postMsg(@PathVariable String chatRoom, @RequestParam String msg) {
+		return "" + worker.postMsg(chatRoom, msg);
+	}
+	
+	
+	
 	
 	@ResponseBody
 	@RequestMapping("/me-signup")
@@ -107,5 +123,12 @@ public class ApplicationController {
 	public String showColl(@PathVariable String coll) {
 		return worker.showCollection(coll);
 	}
+	
+	@ResponseBody
+	@RequestMapping("/sc/sample/{slug}/{time}")
+	public String sample(@PathVariable String slug, @PathVariable long time) {
+		return worker.getmsggt(time, slug);
+	}
+	
 	
 }

@@ -20,7 +20,8 @@ public class MongoDB {
 		//database.getCollection(Worker.CHAT_USER).createIndex(new BasicDBObject("user", 1), new IndexOptions().unique(true));
 		//database.getCollection(Worker.CHAT).createIndex(new BasicDBObject("slug", 1), new IndexOptions().unique(true));
 		//database.getCollection(Worker.CHAT).createIndex(new BasicDBObject("creator", 1));
-		//database.getCollection(Worker.CHAT).createIndex(new BasicDBObject("users.user", 1));
+		database.getCollection(Worker.CHAT_MSG).createIndex(new BasicDBObject("time", 1));
+		database.getCollection(Worker.CHAT_MSG).createIndex(new BasicDBObject("cr", 1));
 	}
 	
 	static {
