@@ -39,13 +39,15 @@ body {
 }
 
 
+#header {
+	z-index: 100;
+}
 
-
-#send-butt:hover {
+/*#send-butt:hover {
 	background-color: rgba(248, 205, 85, 1);
 	color: #3c3c3c;
 }
-
+*/
 ::-webkit-scrollbar {
 	width: 3px;
 }
@@ -212,6 +214,7 @@ textarea:focus {
     font-weight: 600;
 }
 
+
 .day {
 	text-align: center;
 	border-radius: 4px;
@@ -245,7 +248,9 @@ textarea:focus {
 }
 
 .tick {
-	text-shadow: 3px -1px 0px;
+	text-shadow: 5px 0px 0px;
+    color: #70ad70;
+
 }
 
 #exit {
@@ -455,4 +460,42 @@ div#toast {
 	float: right;
 	font-size: .8rem;
 	font-weight: 600;
+}
+
+
+#console {
+	margin-top: 30px;
+	height: 200px;
+	overflow-y: auto;
+	border-radius: 3px;
+    box-shadow: inset 0px -1px 7px 0px rgba(0,0,0, .5);
+    display:none;
+    background-color: #fff; 
+}
+
+.log-info {
+	margin: 5px;
+	font-size: 12px;
+	color: #000;
+	
+}
+
+
+#status-bar {
+	position: absolute;
+    width: 100%;
+    text-align: center;
+    margin-top: -27px;
+}
+
+
+#status-bar div {
+	font-size: .83rem;
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: #85929E;
+    border-radius: 5px;
+    box-shadow: 0px 1px 1px 0px rgba(0,0,0,.5);
+    color: #fff;
+    opacity: 0;
 }

@@ -2,11 +2,13 @@
 var lng = 77.12;
 var lat = 28.38;
 var lastMsgTime = 0;
+var secondLast;
 var startDate='';
 var stD = 0;
 var cT = '';
 var isTyping = false;
 var rC = true;
+
 var monthNames = [
 	  "January", "February", "March",
 	  "April", "May", "June", "July",
@@ -19,84 +21,40 @@ const DISABLED = 'disabled';
 var $toast = $('#toast'); 
 var $modalContent = $('.modal-content');
 var $modal = $('.modal');
+var $console = $('#console');
+var $typeS = $('#status-bar div');
 
-$('#create-chat-button').click(function() {
-	if(!hasSpace()) {
-		if($('#user').val() != '' && $('#c-r-name').val() != '') {
-			$.ajax({
-				method: "post",
-				url: "create-chat-room",
-				data: $("#create-chat-frm").serialize()
-			}).done(function(data) {
-				var msg = data;
-				$('#all').hide('clip', 400, function() {
-					$('#chat-room-id').text(msg);
-					$('#cont-butt').attr('href', msg + '.chat');
-					window.scrollTo(0, 0);
-					$('#cont').show('clip', { /* percent: 100 */ }, 500, function(){
-						setCookie($('#user').val(), msg);
-						getCookie();
-					});			
-				});
-			}).fail(function() {
-				alert('failed');
-			});
-		}
-	}else {
-		$('#err-txt').show();
-		$('#err-txt').text('Oops, nick name can\'t have spaces.').fadeOut(5000);
+
+function hideTypeS() {
+	$typeS.animate({opacity: 0});
+}
+
+function showTypeS(msg) {
+	if($typeS.css('opacity') == '0') {
+		$('#type-stat').text(msg);
+		$typeS.animate({opacity: 1});
 	}
-});
+}
 
+
+function log(msg) {
+	/*
+	$console.append('<div class="log-info">' + msg + '</div>');
+	scrollToBootomOfLog();
+	*/
+	function scrollToBootomOfLog() {
+		var height = 0;
+		$('#console .log-info').each(function(i, value){
+		    height += parseInt($(this).height());
+		});
+		height += '';
+		$('#console').css({scrollTop: height});
+	}
+}
 
 function hasSpace() {
 	var expr = /\s/;
 	return expr.test($('#user').val())
-}
-
-
-$('#join-chat-butt').click(function() {
-	if(!hasSpace()) {
-		if($('#cid').val() != '' && $('#user').val() != '') {
-			$.ajax({
-				method: "post",
-				url: "UserAdder",
-				data: $('form').serialize()
-			}).done(function(data) {
-				if(data === '0') {
-					$('#err-txt').text('Oops, Chat Room ID is not valid.');
-				} else if (data === '-1') {
-					$('#err-txt').show();
-					$('#err-txt').text('Oops, someone already has this nick name.').fadeOut(5000);
-				} else {
-					setCookie($('#user').val(), $('#cid').val());
-					window.location.assign($('#cid').val() + '.chat');
-				}
-			}).fail(function() {
-				$('#err-txt').show();
-				$('#err-txt').text('Oops, Something went wrong.').fadeOut(5000);
-			});
-		}
-	}else {
-		$('#err-txt').show();
-		$('#err-txt').text('Oops, nick name can\'t have spaces.').fadeOut(5000);
-	}
-});
-
-function setCookie(user, chatRoomID) {
-    var d = new Date();
-    d.setTime(d.getTime() + (3*24*60*60*1000));
-    var expires = "expires="+d.toUTCString();
-    document.cookie = "user=" + user + "; " + expires;
-    document.cookie = "cid=" + chatRoomID + "; " + expires;
-}
-
-function getCookie() {
-    var ca = document.cookie.split(';');
-    for(var i=0; i<ca.length; i++) {
-        console.log(ca[i]);
-    }
-    // return "";
 }
 
 function notTyping() {
@@ -121,9 +79,7 @@ function postThisMessage() {
 function checkForNewDate() {
 	if((getDatePart(startDate) < getDatePart(cT))  ||  $('.msg-wrapper').length === 0) {
 		var parts = cT.split(" ")[0].split("-");
-//		alert(parts[0] + ' ' + parts[1] + ' ' + parts[2]);
 		var div = getMarkerForText(monthNames[parseInt(parts[1]) - 1] + ' ' + parts[2] + ', ' + parts[0]);
-	//	alert(div);
 		$('#chat-box').append(div);
 	}
 }
@@ -137,18 +93,16 @@ function getDatePart(date) {
 }
 
 
-
 function scrollToChatBoxBottom() {
 	var height = 0;
 	$('#chat-box div').each(function(i, value){
 	    height += parseInt($(this).height());
 	});
-	height += '';
-	$('#chat-box').animate({scrollTop: height});
+	height += 30;
+	$('#chat-box').animate({scrollTop: '' + height});
 }
 
 function getFormattedTime(time) {
-	console.log(time);
 	time = time.split(" ")[1];
 	var parts = time.split(":");
 	var hr = parts[0] % 12;
@@ -164,13 +118,21 @@ function getFormattedTime(time) {
 
 function updateStatus(jsonObj) {
 	var i = 0;
+	var oneName = '';
+	var userCount = 0;
 	var me = $('.user-details')[$('.user-details').length - 1];
 	while(i < jsonObj.length) {
 		var name = jsonObj[i].user;
 		if($('#usr-' + name).length === 1) {
 			if(name != cuser()) {
 				determineStatus(jsonObj[i]);
-				$('#st-' + name).text(jsonObj[i].status);
+				if(jsonObj[i].status.charAt(0) == 'T') {
+					if(oneName == '') {
+						oneName = jsonObj[i].fname.split(' ')[0];
+					} else {
+						userCount++;
+					}
+				}
 			}
 		}else {
 			$(me).before(getUserTemplate(jsonObj[i]));
@@ -180,34 +142,91 @@ function updateStatus(jsonObj) {
 		}
 		i++;
 	}
-	
+	if(oneName != '') {
+		var msg = oneName;
+		if(userCount > 0) {
+			msg += ' and ' + userCount + ' other are ';
+		} else {
+			msg += ' is ';
+		}
+		showTypeS(msg + ' typing...');
+	} else {
+		hideTypeS();
+	}
 
+}
+
+
+function getUserTemplate(u) {
+	determineStatus(u);
+	return `<div class="user-details" id="ud-${u.user}" title="${u.user}">
+				<div>
+					<span class="user-name" id="usr-${u.user}">${u.fname}</span>
+					<span id="creator" style="display: ${u.cr}"> Creator </span>
+				</div>
+				<div>
+					<span class="user-status" id="st-${u.user}">${u.status}</span>
+				</div>
+			</div>`;
+}
+
+
+//2018-06-20 02:33
+function determineStatus(u) {
+	var status = u.status;
+	var now = new Date(cT);
+	if(/^\d\d\d\d/.test(status)) {
+		var st = new Date(status);
+		var diff = now.getTime() - st.getTime();
+		var time = st.toLocaleString().split(',')[1].trim().replace(':00', '');
+		diff /= 1000;
+		if(diff < 60) {
+			status = 'Online';
+		} else {
+			var dateDiff = now.getDate() - st.getDate(); 
+			if(dateDiff == 0) {
+				status = 'Last seen today at ' + time;
+			} else if(dateDiff == 1) {
+				status = 'Last seen yesterday at ' + time;
+			} else {
+				status = 'Last seen ' + st.toLocaleString().split(',')[0] + ', ' + time;
+			}
+		}
+	}
+	u.status = status;
 }
 
 
 function getMsgs() {
 	if(rC) {
+		log('getMsgs():130, getting msgs');
 		rC = false;
 		$.ajax({
 			method: 'get',
 			url: window.location.pathname + '/gms',
 			data: postStatus()
 		}).done(function(data) {
-			//console.log(data);
 			data = $.parseJSON(data);
+			log('getMsgs(' + lastMsgTime + '):138, ' + data.msg.length + ' msgs fetched');
 			renderMsgs(data.msg);
 			updateStatus(data.status);
 			rC = true;
 		});
+	} else {
+		log('getMsgs():144, not getting msgs as last call is not completed yet');
 	}
 }
 function renderMsgs(msgs) {
 	var i = 0;
 	while(i <= msgs.length - 1) {
-		checkForNewDate();
-		$('#chat-box').append(getBubble(msgs[i]));
-		lastMsgTime = msgs[i].time.$numberLong;
-		scrollToChatBoxBottom();
+		if($('#msg-' + msgs[i].time.$numberLong).length == 0) {
+			checkForNewDate();
+			$('#chat-box').append(getBubble(msgs[i]));
+			lastMsgTime = msgs[i].time.$numberLong;
+			scrollToChatBoxBottom();
+		} else {
+			log('renderMsgs():156, Not rendering msg.');
+		}
 		i++;
 	}
 }
@@ -236,11 +255,9 @@ function formatAtProp(msg) {
 			hour: 'numeric',
 			minute: 'numeric'
 	};
-	
-	var d = new Date(msg.at);
+	var d = new Date(parseInt(msg.time.$numberLong));
 	msg.fat = d.toLocaleDateString("en-US", options);
 	msg.at = d.toLocaleDateString("en-US", options2).split(', ')[1];
-	
 }
 
 function getIncomingBubble(msg) {
@@ -251,7 +268,7 @@ function getIncomingBubble(msg) {
 
 
 function getIText(msg) {
-	return '<div class="msg-wrapper incoming">' +
+	return '<div class="msg-wrapper incoming" id="msg-' + msg.time.$numberLong + '">' +
 				'<div class="msg in">' +
 					'<div class="msg-by-wrapper">' + 
 						'<span class="msg-by">' + msg.by + '</span></div>' +
@@ -270,11 +287,11 @@ function getOutgoingBubble(msg) {
 
 
 function getOText(msg) {
-	return '<div class="msg-wrapper outgoing">' + 
+	return '<div class="msg-wrapper outgoing" id="msg-' + msg.time.$numberLong + '">' + 
 				'<div class="msg out">' +
 				'<div class="main-msg">' + msg.msg + '</div>' +
 				'<div class="time-bar outgoing">' +
-				'<span class="time"> ' + msg.at + '&nbsp;&nbsp;<span>&#10004;<span></span>' +
+				'<span class="time"> ' + msg.at + '&nbsp;&nbsp;<span class="tick"><i class="fas fa-check"></i><span></span>' +
 			'</div></div></div>';
 }
 
@@ -290,19 +307,45 @@ function postStatus() {
 function postMessage() {
 	var msg = $('#text-ip').val().trim();
 	$('#text-ip').val('');
-	var data = {msg : msg, time : (new Date()).getTime(), by: cuser(), type: 'text', at: cT};
+	var data = {msg : msg, by: cuser(), type: 'text', at: cT};
+	//addNewBubble(data);
+	log('postMsg():240 Posting msg...');
 	$.ajax({
 		method: 'post',
 		url: window.location.pathname + '/post-msg',
 		data: {
 			msg: JSON.stringify(data)
 		}
-	}).done(function(msg) {});
+	}).done(function(res) {
+		log('postMsg():248 ' + res);
+		/*if(res == 'true') {
+			$('#bubble-' + data.time).css({'opacity': '1'});
+		}*/
+	});
 }
 
 
+function addNewBubble(msg) {
+	lastMsgTime = msg.time;
+	var msg2 = Object.assign({}, msg);
+	msg2.time = {
+			'$numberLong': msg2.time
+	};
+	formatAtProp(msg2);
+	var bubble = '<div class="msg-wrapper outgoing" id="msg-' + msg.time + '">' + 
+					'<div class="msg out">' +
+					'<div class="main-msg">' + msg2.msg + '</div>' +
+					'<div class="time-bar outgoing">' +
+					'<span class="time"> ' + msg2.at + '&nbsp;&nbsp;<span id="bubble-' +
+						msg2.time.$numberLong + '" style="opacity: 0;" class="tick"><i class="fas fa-check"></i><span></span>' +
+					'</div></div></div>';
+	checkForNewDate();
+	$('#chat-box').append(bubble);
+	scrollToChatBoxBottom();
+}
+
 function startServices() {
-	var msgFetcher = setInterval(getMsgs, 500);
+	var msgFetcher = setInterval(getMsgs, 1000);
 	/*var statusPoster = setInterval(postStatus, 1000);
 	var statusFetcher = setInterval(getStatuses, 1000);*/
 }
@@ -568,9 +611,10 @@ $('#new-cr-from-btn').on('click', function() {
 			success : function(data) {
 				if(data != 'un-auth') {
 					if (data == 'e') {
+						//handle this.
 						$butt.removeClass(DISABLED);
 					} else {
-						//window.location.assign('/chat/' + cr.slug + '.chat');
+						window.location.assign('/chat/' + cr.slug);
 					}
 				}
 			},
@@ -602,7 +646,7 @@ $('#join-cr-form-btn').on('click', function() {
 			if(data == 'true') {
 				window.location.assign('/chat/' + cr);
 			} else {
-				
+				//handle
 			}
 		},
 		error : function() {
@@ -728,44 +772,6 @@ function addMe(creator) {
 	return `#ud-${u.user}`;
 }
 
-function getUserTemplate(u) {
-	determineStatus(u);
-	return `<div class="user-details" id="ud-${u.user}" title="${u.user}">
-				<div>
-					<span class="user-name" id="usr-${u.user}">${u.fname}</span>
-					<span id="creator" style="display: ${u.cr}"> Creator </span>
-				</div>
-				<div>
-					<span class="user-status" id="st-${u.user}">${u.status}</span>
-				</div>
-			</div>`;
-}
-
-
-//2018-06-20 02:33
-function determineStatus(u) {
-	var status = u.status;
-	var now = new Date(cT);
-	if(/^\d\d\d\d/.test(status)) {
-		var st = new Date(status);
-		var diff = now.getTime() - st.getTime();
-		var time = st.toLocaleString().split(',')[1].trim().replace(':00', '');
-		diff /= 1000;
-		if(diff < 60) {
-			status = 'Online';
-		} else {
-			var dateDiff = now.getDate() - st.getDate(); 
-			if(dateDiff == 0) {
-				status = 'Last seen today at ' + time;
-			} else if(dateDiff == 1) {
-				status = 'Last seen yesterday at ' + time;
-			} else {
-				status = 'Last seen ' + st.toLocaleString().split(',')[0] + ', ' + time;
-			}
-		}
-	}
-	u.status = status;
-}
 
 
 

@@ -125,6 +125,12 @@ public class ApplicationController {
 	}
 	
 	@ResponseBody
+	@RequestMapping("/sc/chat_msg/{slug}")
+	public String showAllMsg(@PathVariable String slug) {
+		return worker.getAllMsg(slug);
+	}
+	
+	@ResponseBody
 	@RequestMapping("/sc/sample/{slug}/{time}")
 	public String sample(@PathVariable String slug, @PathVariable long time) {
 		return worker.getmsggt(time, slug);

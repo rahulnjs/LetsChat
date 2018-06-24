@@ -47,7 +47,13 @@
 						 --%>
 					</div>
 					<div id="sender"
-						style="box-sizing: border-box; background-color: yellow; width: 100%; height: 30%; border-left: 1px solid #ccc;">
+						style="box-sizing: border-box; background-color: yellow; position:relative; width: 100%; height: 30%; border-left: 1px solid #ccc;">
+						<div id="status-bar" >
+							<div>
+								<i class="fas fa-comment-alt"></i>&nbsp; 
+								<span id="type-stat"></span>
+							</div>
+						</div>
 						<div
 							style="width: 85%; padding: 4px 0px 0px 3px; box-sizing: border-box; min-height: 78px; max-height: 78px; float: left;">
 							<textarea onblur="notTyping()"
@@ -64,6 +70,9 @@
 
 				</div>
 			</div>
+		</div>
+		<div id="console">
+		
 		</div>
 		<%@include file="footer.jspf" %>
 	</div>
